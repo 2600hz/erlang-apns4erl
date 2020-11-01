@@ -89,8 +89,8 @@
                          , type       := type()
                          , proxy_info => proxy_info()
                          , http_opts  => http_opts()
+                         , options    => gun:opts()
                          }.
-
 -type state()        :: #{ connection      := connection()
                          , gun_pid         => pid()
                          , gun_monitor     => reference()
@@ -233,7 +233,7 @@ open_origin(internal, _, #{connection := Connection} = StateData) ->
            , tls_opts => TransportOpts
            , retry          => 0
            },
-  Opts = add_gun_opts(Connection, Opts0),
+  Opts = add_options(Connection, Opts0),
   {next_state, open_common, StateData,
     {next_event, internal, { Host
                            , Port
@@ -247,7 +247,7 @@ open_proxy(internal, _, StateData) ->
            , transport => tcp
            , retry     => 0
            },
-  Opts = add_gun_opts(Connection, Opts0),
+  Opts = add_options(Connection, Opts0),
   {next_state, open_common, StateData,
     {next_event, internal, { ProxyHost
                            , ProxyPort
@@ -501,14 +501,5 @@ backoff(N, Ceiling) ->
       list_to_integer(NString)
   end.
 
-add_gun_opts(Connection, Opts) ->
-    maps:merge(maps:with(gun_opts_keys(), Connection), Opts).
-
-gun_opts_keys() ->
-    [ connect_timeout
-    , http_opts
-    , http2_opts
-    , retry_timeout
-    , trace
-    , event_handler
-    , transport ].
+add_options(Connection, Opts) ->
+    maps:merge(maps:get(options, Connection, #{}), Opts).
