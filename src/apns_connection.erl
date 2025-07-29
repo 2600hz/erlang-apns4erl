@@ -435,13 +435,19 @@ transport_opts(Connection) ->
     certdata ->
       Cert = certdata(Connection),
       Key = keydata(Connection),
-      [{cert, Cert}, {key, Key}];
+      [ {cert, Cert}
+      , {key, Key}
+      , {cacerts, public_key:cacerts_get()} 
+      , {verify, verify_peer}];
     cert ->
       Certfile = certfile(Connection),
       Keyfile = keyfile(Connection),
-      [{certfile, Certfile}, {keyfile, Keyfile}];
+      [ {certfile, Certfile}
+      , {keyfile, Keyfile}
+      , {cacerts, public_key:cacerts_get()}
+      , {verify, verify_peer}];
     token ->
-      []
+      [ {verify, verify_none} ]
   end.
 
 %%%===================================================================
