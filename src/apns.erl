@@ -154,8 +154,14 @@ generate_token(TeamId, KeyId) ->
   {ok, KeyPath} = application:get_env(apns, token_keyfile),
   generate_token(TeamId, KeyId, KeyPath).
 
--spec generate_token(binary(), binary(), string()) -> token().
-generate_token(TeamId, KeyId, KeyPath) ->
+-spec generate_token(binary(), binary(), any()) -> token().
+generate_token(TeamId, KeyId, KeyPath) when is_list(KeyPath); is_binary(KeyPath) ->
+  {'ok', KeyContent} = file:read_file(KeyPath),
+  [FirstEntry | _] = public_key:pem_decode(KeyContent),
+  PrivateKey = public_key:pem_entry_decode(FirstEntry),
+  generate_token(TeamId, KeyId, PrivateKey);
+
+generate_token(TeamId, KeyId, Key) ->
   Algorithm = <<"ES256">>,
   Header = jsx:encode([ {alg, Algorithm}
                       , {typ, <<"JWT">>}
@@ -167,7 +173,7 @@ generate_token(TeamId, KeyId, KeyPath) ->
   HeaderEncoded = base64url:encode(Header),
   PayloadEncoded = base64url:encode(Payload),
   DataEncoded = <<HeaderEncoded/binary, $., PayloadEncoded/binary>>,
-  Signature = apns_utils:sign(DataEncoded, KeyPath),
+  Signature = apns_utils:sign(DataEncoded, Key),
   <<DataEncoded/binary, $., Signature/binary>>.
 
 %% @doc Get the default headers from environment variables.
